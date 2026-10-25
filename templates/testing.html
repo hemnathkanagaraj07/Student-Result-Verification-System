@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-container">
+
+    <!-- Header Section -->
+    <section class="hero-section">
+        <div class="hero-text">
+            <h1 class="page-title">Software Testing Laboratory Dashboard</h1>
+            <p class="page-subtitle">Automated unit testing, Boundary Value Analysis (BVA), Equivalence Class Partitioning, and test execution matrix.</p>
+        </div>
+        <div class="hero-actions">
+            <button id="btn-run-tests" class="btn btn-primary btn-lg" onclick="triggerTestExecution('all')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                Run Complete Test Suite (69 Tests)
+            </button>
+            <button id="btn-run-unit" class="btn btn-outline" onclick="triggerTestExecution('unit')" title="Quickly runs 68 unit & integration tests without browser overhead">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+                Fast Unit Tests (68)
+            </button>
+        </div>
+    </section>
+
+    <!-- Real-time Test Execution Results Section -->
+    <section class="card test-runner-card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Real Test Execution Status</h2>
+                <p class="card-description">Live execution of pytest test suite on server. Real, un-fabricated test outcomes.</p>
+            </div>
+            <div class="test-header-meta">
+                <span id="test-timestamp" class="text-subtle font-mono"></span>
+                <div id="test-status-badge" class="badge badge-neutral">Ready to Run</div>
+            </div>
+        </div>
+
+        <!-- State 1: Loading State -->
+        <div id="test-loading-state" class="test-loading-banner" style="display: none;">
+            <div class="spinner"></div>
+            <div class="loading-content">
+                <strong id="loading-title">Executing pytest test suite on server...</strong>
+                <p class="text-subtle" id="loading-desc">Running Boundary Value Analysis, Equivalence Partitioning, Flask integration tests, and Selenium WebDriver browser automation. Please wait...</p>
+                <div class="loading-progress-bar">
+                    <div class="loading-progress-fill"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- State 2: Success State Banner -->
+        <div id="test-success-banner" class="test-alert-banner alert-success-state" style="display: none;">
+            <div class="banner-icon">✓</div>
+            <div class="banner-body">
+                <strong>All Tests Passed Successfully!</strong>
+                <p id="success-banner-msg">All tests in the suite executed with zero failures and verified against expected behavior.</p>
+            </div>
+        </div>
+
+        <!-- State 3: Failure State Banner -->
+        <div id="test-error-banner" class="test-alert-banner alert-error-state" style="display: none;">
+            <div class="banner-icon">✗</div>
+            <div class="banner-body">
+                <strong>Test Failures Detected</strong>
+                <p id="error-banner-msg">One or more tests failed. Check individual test cases below or view the raw terminal trace.</p>
+            </div>
+        </div>
+
+        <!-- State 4: Real Metrics Grid -->
+        <div id="test-metrics-grid" class="test-metrics-grid" style="display: none;">
+            <div class="test-metric-box">
+                <span class="metric-label">Total Executed</span>
+                <span class="metric-num" id="total-tests-run">0</span>
+            </div>
+            <div class="test-metric-box metric-passed">
+                <span class="metric-label">Passed</span>
+                <span class="metric-num text-success" id="passed-tests-count">0</span>
+            </div>
+            <div class="test-metric-box metric-failed">
+                <span class="metric-label">Failed</span>
+                <span class="metric-num text-danger" id="failed-tests-count">0</span>
+            </div>
+            <div class="test-metric-box metric-skipped">
+                <span class="metric-label">Skipped</span>
+                <span class="metric-num" id="skipped-tests-count">0</span>
+            </div>
+            <div class="test-metric-box">
+                <span class="metric-label">Execution Time</span>
+                <span class="metric-num" id="tests-duration">0.00s</span>
+            </div>
+        </div>
+
+        <!-- State 5: Live Test Cases List -->
+        <div id="test-results-container" class="test-results-wrap" style="display: none;">
+            <div class="results-header-bar">
+                <div class="results-title-group">
+                    <h3>Executed Test Cases</h3>
+                    <span class="summary-pill" id="test-summary-pill">—</span>
+                </div>
+                <div class="test-controls-row">
+                    <div class="test-filter-chips">
+                        <button type="button" class="filter-chip active" data-filter="all" onclick="filterTestList('all')">
+                            All (<span id="chip-all-count">0</span>)
+                        </button>
+                        <button type="button" class="filter-chip chip-passed" data-filter="passed" onclick="filterTestList('passed')">
+                            Passed (<span id="chip-passed-count">0</span>)
+                        </button>
+                        <button type="button" class="filter-chip chip-failed" data-filter="failed" onclick="filterTestList('failed')">
+                            Failed (<span id="chip-failed-count">0</span>)
+                        </button>
+                        <button type="button" class="filter-chip chip-skipped" data-filter="skipped" onclick="filterTestList('skipped')">
+                            Skipped (<span id="chip-skipped-count">0</span>)
+                        </button>
+                    </div>
+                    <div class="test-search-wrap">
+                        <input type="text" id="test-search-input" placeholder="Search test name or class..." class="search-input" oninput="filterTestList()">
+                    </div>
+                </div>
+            </div>
+            <div class="test-case-list" id="test-case-items">
+                <!-- Dynamically rendered via testing.js -->
+            </div>
+        </div>
+
+        <!-- Raw Pytest Console Output -->
+        <div class="console-box-container">
+            <div class="console-header" onclick="toggleConsole()">
+                <span>Pytest Terminal Output &amp; Trace</span>
+                <span class="console-toggle" id="console-toggle-text">Show Raw Output ▾</span>
+            </div>
+            <pre class="console-output" id="pytest-raw-console" style="display: none;">Click "Run Complete Test Suite" to execute pytest and view real-time terminal output.</pre>
+        </div>
+    </section>
+
+    <!-- Testing Methodologies Grid -->
+    <div class="testing-methodologies-grid">
+
+        <!-- Boundary Value Analysis (BVA) Card -->
+        <section class="card">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">1. Boundary Value Analysis (BVA)</h2>
+                    <p class="card-description">Testing extreme boundaries of valid range [0, 100] and passing threshold [35].</p>
+                </div>
+                <span class="tag-pill">Black Box Testing</span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Boundary Point</th>
+                            <th>Test Value</th>
+                            <th>Class</th>
+                            <th>Expected Result</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Below Min Boundary</td>
+                            <td><code>-0.01</code></td>
+                            <td>Invalid</td>
+                            <td>Rejection: Below minimum 0.0</td>
+                            <td><span class="badge badge-success">Verified</span></td>
+                        </tr>
+                        <tr>
+                            <td>Minimum Boundary</td>
+                            <td><code>0.0</code></td>
+                            <td>Valid</td>
+                            <td>Accepted, Mark = 0.0</td>
+                            <td><span class="badge badge-success">Verified</span></td>
+                        </tr>
+                        <tr>
+                            <td>Just Below Passing</td>
+                            <td><code>34.99</code></td>
+                            <td>Valid Mark</td>
+                            <td>Accepted, Subject Status = FAIL</td>
+                            <td><span class="badge badge-success">Verified</span></td>
+                        </tr>
+                        <tr>
+                            <td>Passing Threshold</td>
+                            <td><code>35.0</code></td>
+                            <td>Valid Mark</td>
+                            <td>Accepted, Subject Status = PASS</td>
+                            <td><span class="badge badge-success">Verified</span></td>
+                        </tr>
+                        <tr>
+                            <td>Near Maximum</td>
+                            <td><code>99.99</code></td>
+                            <td>Valid</td>
+                            <td>Accepted, Distinction mark</td>
+                            <td><span class="badge badge-success">Verified</span></td>
+                        </tr>
+                        <tr>
+                            <td>Maximum Boundary</td>
+                            <td><code>100.0</code></td>
+                            <td>Valid</td>
+                            <td>Accepted, Full marks</td>
+                            <td><span class="badge badge-success">Verified</span></td>
+                        </tr>
+                        <tr>
+                            <td>Above Max Boundary</td>
+                            <td><code>100.01</code></td>
+                            <td>Invalid</td>
+                            <td>Rejection: Exceeds maximum 100.0</td>
+                            <td><span class="badge badge-success">Verified</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Equivalence Class Partitioning (ECP) Card -->
+        <section class="card">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">2. Equivalence Class Partitioning (ECP)</h2>
+                    <p class="card-description">Partitioning input space into valid and invalid equivalence classes.</p>
+                </div>
+                <span class="tag-pill">Black Box Testing</span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Partition Name</th>
+                            <th>Sample Input</th>
+                            <th>Expected System Behavior</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Valid Numeric Partition</strong></td>
+                            <td><code>75, 88.5, 92</code></td>
+                            <td>Calculates total, percentage &amp; grade</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Invalid Negative Partition</strong></td>
+                            <td><code>-5, -20.5</code></td>
+                            <td>Validation Error: Mark cannot be negative</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Invalid Exceeding Partition</strong></td>
+                            <td><code>105, 200</code></td>
+                            <td>Validation Error: Mark cannot exceed 100</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Non-Numeric / Alphabetic</strong></td>
+                            <td><code>"abc", "ten", "N/A"</code></td>
+                            <td>Validation Error: Must be a valid number</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Empty / Whitespace Partition</strong></td>
+                            <td><code>"", "   ", None</code></td>
+                            <td>Validation Error: Mark cannot be empty</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Critical Pass Rule Partition</strong></td>
+                            <td><code>[100, 100, 100, 100, 34]</code></td>
+                            <td>Status: FAIL (Even with 434/500 total)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Terminal Command Reference for Examination -->
+    <section class="card command-guide-card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Laboratory Terminal Execution Commands</h2>
+                <p class="card-description">Commands to run on Windows PowerShell or Command Prompt for your lab exam.</p>
+            </div>
+        </div>
+
+        <div class="command-grid">
+            <div class="command-box">
+                <span class="cmd-title">1. Run Full Pytest Suite (Verbose)</span>
+                <code>python -m pytest -v</code>
+                <span class="cmd-desc">Executes all unit tests and integration tests with detailed pass/fail output.</span>
+            </div>
+
+            <div class="command-box">
+                <span class="cmd-title">2. Run Boundary Value Analysis Tests</span>
+                <code>python -m pytest -v tests/test_calculator.py -k "Boundary"</code>
+                <span class="cmd-desc">Filters and runs only the BVA test suite.</span>
+            </div>
+
+            <div class="command-box">
+                <span class="cmd-title">3. Run Pass/Fail Business Logic Tests</span>
+                <code>python -m pytest -v tests/test_calculator.py -k "PassFail"</code>
+                <span class="cmd-desc">Verifies student passing rules (≥ 35 in each subject).</span>
+            </div>
+
+            <div class="command-box">
+                <span class="cmd-title">4. Run Selenium End-to-End Browser Test</span>
+                <code>python tests/test_selenium.py</code>
+                <span class="cmd-desc">Automates Chrome/Edge browser to fill and verify result submission.</span>
+            </div>
+        </div>
+    </section>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/testing.js') }}"></script>
+{% endblock %}

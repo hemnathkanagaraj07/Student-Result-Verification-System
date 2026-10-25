@@ -1,0 +1,87 @@
+[
+  {
+    "roll_no": "IT2026-001",
+    "name": "Aarav Sharma",
+    "marks": {
+      "sub1": 88.0,
+      "sub2": 92.0,
+      "sub3": 85.0,
+      "sub4": 90.0,
+      "sub5": 95.0
+    },
+    "total": 450.0,
+    "max_total": 500.0,
+    "percentage": 90.0,
+    "status": "Pass",
+    "grade": "A+",
+    "timestamp": "2026-10-25 09:30:00"
+  },
+  {
+    "roll_no": "IT2026-002",
+    "name": "Priya Patel",
+    "marks": {
+      "sub1": 65.0,
+      "sub2": 72.0,
+      "sub3": 58.0,
+      "sub4": 64.0,
+      "sub5": 70.0
+    },
+    "total": 329.0,
+    "max_total": 500.0,
+    "percentage": 65.8,
+    "status": "Pass",
+    "grade": "B",
+    "timestamp": "2026-10-25 10:15:00"
+  },
+  {
+    "roll_no": "IT2026-003",
+    "name": "Rohan Deshmukh",
+    "marks": {
+      "sub1": 78.0,
+      "sub2": 82.0,
+      "sub3": 32.0,
+      "sub4": 75.0,
+      "sub5": 80.0
+    },
+    "total": 347.0,
+    "max_total": 500.0,
+    "percentage": 69.4,
+    "status": "Fail",
+    "grade": "F",
+    "timestamp": "2026-10-25 11:00:00"
+  },
+  {
+    "roll_no": "IT2026-004",
+    "name": "Sneha Kulkarni",
+    "marks": {
+      "sub1": 35.0,
+      "sub2": 35.0,
+      "sub3": 35.0,
+      "sub4": 35.0,
+      "sub5": 35.0
+    },
+    "total": 175.0,
+    "max_total": 500.0,
+    "percentage": 35.0,
+    "status": "Pass",
+    "grade": "D",
+    "timestamp": "2026-10-25 11:45:00"
+  },
+  {
+    "roll_no": "SELENIUM-99",
+    "name": "Pooja Sharma",
+    "marks": {
+      "sub1": 80.0,
+      "sub2": 85.0,
+      "sub3": 90.0,
+      "sub4": 75.0,
+      "sub5": 85.0
+    },
+    "total": 415.0,
+    "max_total": 500.0,
+    "percentage": 83.0,
+    "status": "Pass",
+    "grade": "A",
+    "timestamp": "2026-10-25 14:37:22"
+  }
+]

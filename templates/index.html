@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-container">
+
+    <!-- Hero / Header Section -->
+    <section class="hero-section">
+        <div class="hero-text">
+            <h1 class="page-title">Student Result Verification System</h1>
+            <p class="page-subtitle">Verify academic marks, compute total and percentage, and enforce passing criteria with real-time validation.</p>
+        </div>
+        <div class="hero-actions">
+            <button id="btn-export-csv" class="btn btn-outline" title="Export verified results as CSV">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Export CSV
+            </button>
+            <button id="btn-reset-data" class="btn btn-ghost" title="Reset dataset to initial sample data">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                    <path d="M21 3v5h-5"/>
+                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                    <path d="M8 16H3v5"/>
+                </svg>
+                Reset Samples
+            </button>
+        </div>
+    </section>
+
+    <!-- Real-time Statistics Cards -->
+    <section class="stats-grid">
+        <div class="stat-card" id="card-total-students">
+            <div class="stat-icon icon-blue">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+            </div>
+            <div class="stat-info">
+                <span class="stat-label">Total Verified</span>
+                <span class="stat-value" id="stat-total">{{ stats.total_students }}</span>
+                <span class="stat-subtext">Registered Students</span>
+            </div>
+        </div>
+
+        <div class="stat-card" id="card-passed-students">
+            <div class="stat-icon icon-green">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+            </div>
+            <div class="stat-info">
+                <span class="stat-label">Passed</span>
+                <div class="stat-inline">
+                    <span class="stat-value" id="stat-passed">{{ stats.passed_count }}</span>
+                    <span class="badge badge-success" id="stat-pass-pct">{{ stats.pass_percentage }}%</span>
+                </div>
+                <span class="stat-subtext">All subjects ≥ 35</span>
+            </div>
+        </div>
+
+        <div class="stat-card" id="card-failed-students">
+            <div class="stat-icon icon-red">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="15" y1="9" x2="9" y2="15"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+            </div>
+            <div class="stat-info">
+                <span class="stat-label">Failed</span>
+                <span class="stat-value" id="stat-failed">{{ stats.failed_count }}</span>
+                <span class="stat-subtext">At least 1 subject &lt; 35</span>
+            </div>
+        </div>
+
+        <div class="stat-card" id="card-class-average">
+            <div class="stat-icon icon-indigo">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="20" x2="18" y2="10"/>
+                    <line x1="12" y1="20" x2="12" y2="4"/>
+                    <line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+            </div>
+            <div class="stat-info">
+                <span class="stat-label">Class Average</span>
+                <span class="stat-value" id="stat-avg">{{ stats.class_average }}%</span>
+                <span class="stat-subtext">Across all subjects</span>
+            </div>
+        </div>
+
+        <div class="stat-card" id="card-topper">
+            <div class="stat-icon icon-amber">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="8" r="7"/>
+                    <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
+                </svg>
+            </div>
+            <div class="stat-info">
+                <span class="stat-label">Highest Score</span>
+                <span class="stat-value" id="stat-topper-pct">
+                    {% if stats.highest_score %}{{ stats.highest_score.percentage }}%{% else %}N/A{% endif %}
+                </span>
+                <span class="stat-subtext" id="stat-topper-name">
+                    {% if stats.highest_score %}{{ stats.highest_score.name }} ({{ stats.highest_score.roll_no }}){% else %}No data{% endif %}
+                </span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Workspace: Form on Left, Table on Right -->
+    <div class="workspace-layout">
+
+        <!-- Left Column: Result Verification & Input Form -->
+        <section class="card form-card">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">Student Result Verification Form</h2>
+                    <p class="card-description">Enter details and marks (0–100) for 5 subjects.</p>
+                </div>
+                <span class="tag-pill">Rule: Pass ≥ 35 in each</span>
+            </div>
+
+            <!-- Quick Preset Helper for Demonstration -->
+            <div class="preset-bar">
+                <span class="preset-label">Testing Presets:</span>
+                <button type="button" class="btn-chip" onclick="fillSampleData('valid')">Standard Pass</button>
+                <button type="button" class="btn-chip" onclick="fillSampleData('boundary')">Boundary (35)</button>
+                <button type="button" class="btn-chip" onclick="fillSampleData('fail_one')">Fail (One 34)</button>
+                <button type="button" class="btn-chip" onclick="fillSampleData('topper')">Topper (95+)</button>
+            </div>
+
+            <!-- Error Summary Alert Box -->
+            <div id="form-error-box" class="alert alert-danger" style="display: none;">
+                <div class="alert-header">
+                    <strong>Validation Failed:</strong>
+                </div>
+                <ul id="form-error-list" class="alert-list"></ul>
+            </div>
+
+            <form id="student-form" class="student-form" novalidate>
+                <!-- Student Identifiers -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name" class="form-label">
+                            Student Name <span class="required">*</span>
+                        </label>
+                        <input type="text" id="name" name="name" class="form-control" placeholder="e.g. Rahul Sharma" required autocomplete="off">
+                        <div class="field-feedback" id="feedback-name"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="roll_no" class="form-label">
+                            Roll Number <span class="required">*</span>
+                        </label>
+                        <input type="text" id="roll_no" name="roll_no" class="form-control text-uppercase" placeholder="e.g. IT2026-105" required autocomplete="off">
+                        <div class="field-feedback" id="feedback-roll_no"></div>
+                    </div>
+                </div>
+
+                <!-- 5 Subject Marks -->
+                <div class="marks-header">
+                    <h3 class="marks-title">Subject Marks (Max 100 Each)</h3>
+                    <span class="marks-note">Passing mark: 35</span>
+                </div>
+
+                <div class="marks-grid">
+                    {% for key in subject_keys %}
+                    <div class="mark-input-group">
+                        <div class="mark-label-wrap">
+                            <label for="{{ key }}" class="mark-label">
+                                {{ subject_names[key] }}
+                            </label>
+                            <span class="subj-code">[{{ key|upper }}]</span>
+                        </div>
+                        <div class="input-with-badge">
+                            <input 
+                                type="number" 
+                                id="{{ key }}" 
+                                name="{{ key }}" 
+                                class="form-control mark-input" 
+                                placeholder="0–100" 
+                                min="0" 
+                                max="100" 
+                                step="any"
+                                required
+                            >
+                            <span class="input-unit">/100</span>
+                        </div>
+                        <div class="mark-status-pill" id="pill-{{ key }}">Pending</div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Live Calculation Preview Card -->
+                <div class="live-preview-box" id="live-preview-box">
+                    <div class="preview-header">
+                        <span class="preview-title">Instant Calculation Preview</span>
+                        <span id="preview-status-badge" class="badge badge-neutral">Enter Marks</span>
+                    </div>
+                    <div class="preview-metrics">
+                        <div class="preview-item">
+                            <span class="preview-label">Total Marks</span>
+                            <span class="preview-val" id="preview-total">— / 500</span>
+                        </div>
+                        <div class="preview-item">
+                            <span class="preview-label">Percentage</span>
+                            <span class="preview-val" id="preview-percentage">— %</span>
+                        </div>
+                        <div class="preview-item">
+                            <span class="preview-label">Result Status</span>
+                            <span class="preview-val" id="preview-status-text">—</span>
+                        </div>
+                        <div class="preview-item">
+                            <span class="preview-label">Projected Grade</span>
+                            <span class="preview-val" id="preview-grade">—</span>
+                        </div>
+                    </div>
+                    <div class="preview-note" id="preview-note">
+                        Fill in all five subject marks to calculate final status.
+                    </div>
+                </div>
+
+                <!-- Form Action Buttons -->
+                <div class="form-actions">
+                    <button type="submit" id="btn-submit-form" class="btn btn-primary btn-lg">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                            <polyline points="17 21 17 13 7 13 7 21"/>
+                            <polyline points="7 3 7 8 15 8"/>
+                        </svg>
+                        Verify &amp; Save Result
+                    </button>
+                    <button type="button" id="btn-reset-form" class="btn btn-outline" onclick="resetForm()">
+                        Clear
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Right Column: Results Ledger Table -->
+        <section class="card table-card">
+            <div class="card-header table-header-flex">
+                <div>
+                    <h2 class="card-title">Verified Results Ledger</h2>
+                    <p class="card-description">Live database of evaluated student marks &amp; verification statuses.</p>
+                </div>
+                <div class="table-controls">
+                    <div class="search-box">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" id="table-search" placeholder="Search Roll No or Name..." class="search-input">
+                    </div>
+                    <select id="status-filter" class="form-select">
+                        <option value="ALL">All Status</option>
+                        <option value="Pass">Pass Only</option>
+                        <option value="Fail">Fail Only</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Results Table Container -->
+            <div class="table-responsive">
+                <table class="data-table" id="results-table">
+                    <thead>
+                        <tr>
+                            <th>Roll Number</th>
+                            <th>Student Name</th>
+                            <th title="Software Engineering">SE</th>
+                            <th title="Python Programming">PP</th>
+                            <th title="Database Management">DBMS</th>
+                            <th title="Web Technologies">WT</th>
+                            <th title="Software Testing & QA">STQA</th>
+                            <th>Total (/500)</th>
+                            <th>Percentage</th>
+                            <th>Status</th>
+                            <th>Grade</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-tbody">
+                        {% for r in results %}
+                        <tr id="row-{{ r.roll_no }}" data-roll="{{ r.roll_no }}" data-name="{{ r.name }}" data-status="{{ r.status }}">
+                            <td class="font-mono font-bold text-navy">{{ r.roll_no }}</td>
+                            <td class="font-medium">{{ r.name }}</td>
+                            <td class="mark-cell {% if r.marks.sub1 < 35 %}mark-fail{% endif %}">{{ r.marks.sub1 }}</td>
+                            <td class="mark-cell {% if r.marks.sub2 < 35 %}mark-fail{% endif %}">{{ r.marks.sub2 }}</td>
+                            <td class="mark-cell {% if r.marks.sub3 < 35 %}mark-fail{% endif %}">{{ r.marks.sub3 }}</td>
+                            <td class="mark-cell {% if r.marks.sub4 < 35 %}mark-fail{% endif %}">{{ r.marks.sub4 }}</td>
+                            <td class="mark-cell {% if r.marks.sub5 < 35 %}mark-fail{% endif %}">{{ r.marks.sub5 }}</td>
+                            <td class="font-semibold">{{ r.total }}</td>
+                            <td class="font-semibold">{{ r.percentage }}%</td>
+                            <td>
+                                {% if r.status == 'Pass' %}
+                                <span class="badge badge-success">PASS</span>
+                                {% else %}
+                                <span class="badge badge-danger">FAIL</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="grade-pill grade-{{ r.grade }}">{{ r.grade }}</span>
+                            </td>
+                            <td class="text-right">
+                                <button class="btn-icon text-danger" title="Delete Student" onclick="deleteStudentRecord('{{ r.roll_no }}')">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="3 6 5 6 21 6"/>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                    </svg>
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr id="empty-row">
+                            <td colspan="12" class="empty-state">
+                                No student records found. Enter details above or click "Reset Samples".
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-footer-info">
+                <span>Showing <strong id="showing-count">{{ results|length }}</strong> students</span>
+                <span class="note-rule">Minimum criteria: ≥ 35.0 in each subject to Pass</span>
+            </div>
+        </section>
+
+    </div>
+
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-modal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
+        <h3 class="modal-title">Confirm Deletion</h3>
+        <p class="modal-text">Are you sure you want to delete student result for <strong id="delete-student-roll"></strong>?</p>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeDeleteModal()">Cancel</button>
+            <button class="btn btn-danger" id="btn-confirm-delete">Delete Record</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% endblock %}

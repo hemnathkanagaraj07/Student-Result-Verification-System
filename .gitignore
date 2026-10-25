@@ -1,0 +1,34 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest and coverage artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Generated test run caches (seed data data/results.json is tracked)
+data/test_results.xml
+data/latest_test_results.json
+
+# Virtual Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Editor and IDE configurations
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Operating System files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Logs
+*.log
